@@ -1,0 +1,34 @@
+{
+    "name": "keios/oc-trait-financial",
+    "description": "Financial trait for OctoberCMS' models.",
+    "keywords": [
+        "octobercms",
+        "october",
+        "financial",
+        "money"
+    ],
+    "homepage": "https://github.com/keiosweb/oc-trait-financial",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Łukasz Biały",
+            "email": "lukasz@c-call.eu",
+            "homepage": "http://keios.eu",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php" : ">=5.4.0",
+        "keios/moneyright": "~1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Keios\\Financial\\": "src"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    }
+}
