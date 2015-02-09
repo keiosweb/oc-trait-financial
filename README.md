@@ -1,10 +1,10 @@
 # Keios/oc-trait-financial
 
-[![Latest Version](https://img.shields.io/github/release/keiosnet/oc-trait-financial.svg?style=flat-square)](https://github.com/keiosnet/oc-trait-financial/releases)
+[![Latest Version](https://img.shields.io/github/release/keiosweb/oc-trait-financial.svg?style=flat-square)](https://github.com/keiosweb/oc-trait-financial/releases)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![Total Downloads](https://img.shields.io/packagist/dt/keios/oc-trait-financial.svg?style=flat-square)](https://packagist.org/packages/keios/oc-trait-financial)
 
-Trait for OctoberCMS' models providing [Keios/MoneyRight](http://github.com/keiosnet/moneyright) value object integration.
+Trait for OctoberCMS' models providing [Keios/MoneyRight](http://github.com/keiosweb/moneyright) value object integration.
 
 ## Install
 
@@ -35,7 +35,7 @@ If you discover any security related issues, please email lukasz@c-call.eu inste
 
 ## Credits
 
-- [Keios Solutions](https://github.com/keiosnet)
+- [Keios Solutions](https://github.com/keiosweb)
 - [All Contributors](../../contributors)
 
 ## License
