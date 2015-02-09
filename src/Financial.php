@@ -46,7 +46,7 @@ trait Financial
 
             $model->bindEvent('model.beforeSetAttribute', function ($key, $value) use ($model, $financialAttributes) {
                 if (in_array($key, $model->getProtectedFieldNames())) {     // if key is listed as protected field
-                    return false;                                           // that constitute Financial data, quit
+                    throw new ProtectedFieldException('Cannot save to protected field'); // that constitute Financial data, quit
                 }
 
                 if (in_array($key, array_keys($financialAttributes)) && ($value instanceof Money)) {
@@ -68,6 +68,7 @@ trait Financial
 
     /**
      * Getter for private $protectedFieldNames
+     *
      * @return array
      */
     public function getProtectedFieldNames()
@@ -77,6 +78,7 @@ trait Financial
 
     /**
      * Lists fields that shouldn't be accessible from outer context
+     *
      * @param array $financialAttributes
      */
     public function guardProtectedFields(array $financialAttributes)
