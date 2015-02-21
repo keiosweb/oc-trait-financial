@@ -29,41 +29,61 @@ trait Financial
     public static function bootFinancial()
     {
         if (!property_exists(get_called_class(), 'financial')) {
-            throw new \Exception(sprintf('You must define a $financial property in %s to use the Financial trait.',
-                get_called_class()));
+            throw new \Exception(
+                sprintf('You must define a $financial property in %s to use the Financial trait.', get_called_class())
+            );
         }
 
         /*
          * Transform data
          */
-        static::extend(function ($model) {
+        static::extend(
+            function ($model) {
 
-            $financialAttributes = $model->getFinancialConfiguration();
+                $financialAttributes = $model->getFinancialConfiguration();
 
-            $model->validateFinancialConfiguration($financialAttributes);
+                $model->validateFinancialConfiguration($financialAttributes);
 
-            $model->guardProtectedFields($financialAttributes);
+                $model->guardProtectedFields($financialAttributes);
 
-            $model->bindEvent('model.beforeSetAttribute', function ($key, $value) use ($model, $financialAttributes) {
-                if (in_array($key, $model->getProtectedFieldNames())) {     // if key is listed as protected field
-                    throw new ProtectedFieldException('Cannot save to protected field'); // that constitute Financial data, quit
-                }
+                $model->bindEvent(
+                    'model.beforeSetAttribute',
+                    function ($key, $value) use ($model, $financialAttributes) {
+                        /*
+                         * if key is listed as protected field
+                         * that constitute Financial data, quit
+                         */
+                        if (in_array($key, $model->getProtectedFieldNames())) {
+                            throw new ProtectedFieldException('Cannot save to protected field');
+                        }
 
-                if (in_array($key, array_keys($financialAttributes)) && ($value instanceof Money)) {
-                    return $model->setFinancialFieldsWithMoneyData($key, $value);
-                }
+                        if (in_array($key, array_keys($financialAttributes)) && ($value instanceof Money)) {
+                            return $model->setFinancialFieldsWithMoneyData($key, $value);
+                        }
 
-            });
+                    }
+                );
 
-            $model->bindEvent('model.beforeGetAttribute', function ($key) use ($model, $financialAttributes) {
-                if (in_array($key, array_keys($financialAttributes)) &&
-                    array_get($model->attributes, $financialAttributes[$key]['balance']) != null &&
-                    array_get($model->attributes, $financialAttributes[$key]['currency']) != null
-                ) {
-                    return $model->getMoneyValueObject($key);
-                }
-            });
-        });
+                $model->bindEvent(
+                    'model.beforeGetAttribute',
+                    function ($key) use ($model, $financialAttributes) {
+                        if (in_array($key, array_keys($financialAttributes)) &&
+                            array_get($model->attributes, $financialAttributes[$key]['balance']) != null &&
+                            array_get($model->attributes, $financialAttributes[$key]['currency']) != null
+                        ) {
+                            return $model->getMoneyValueObject($key);
+                        }
+                    }
+                );
+
+                $model->bindEvent(
+                    'model.saveInternal',
+                    function () use ($model) {
+                        $model->purgeFinancialFields();
+                    }
+                );
+            }
+        );
     }
 
     /**
@@ -83,9 +103,9 @@ trait Financial
      */
     public function guardProtectedFields(array $financialAttributes)
     {
-        foreach ($financialAttributes as $attribute => $fieldsArray) {
-            $this->protectedFieldNames[] = $fieldsArray['balance'];
-            $this->protectedFieldNames[] = $fieldsArray['currency'];
+        foreach ($financialAttributes as $attribute => $configuration) {
+            $this->protectedFieldNames[] = $configuration['balance'];
+            $this->protectedFieldNames[] = $configuration['currency'];
         }
     }
 
@@ -100,7 +120,9 @@ trait Financial
     {
         foreach ($financialAttributes as $key => $value) {
             if (!is_array($value) || !array_key_exists('balance', $value) || !array_key_exists('currency', $value)) {
-                throw new \Exception('Invalid financial configuration, has to be ["field" => ["balance"=>"", "currency"=>""]].');
+                throw new \Exception(
+                    'Invalid financial configuration, has to be ["field" => ["balance"=>"", "currency"=>""]].'
+                );
             }
         }
     }
@@ -118,6 +140,7 @@ trait Financial
         $financialAttributes = $this->getFinancialConfiguration();
         $this->attributes[$financialAttributes[$key]['balance']] = $value->getAmountString();
         $this->attributes[$financialAttributes[$key]['currency']] = $value->getCurrency()->getIsoCode();
+
         return true;
     }
 
@@ -133,6 +156,7 @@ trait Financial
         $financialAttributes = $this->getFinancialConfiguration();
         $balance = array_get($this->attributes, $financialAttributes[$key]['balance']);
         $currencyIso = array_get($this->attributes, $financialAttributes[$key]['currency']);
+
         return Money::$currencyIso($balance);
     }
 
@@ -149,6 +173,14 @@ trait Financial
         }
 
         return $this->financial;
+    }
+
+    public function purgeFinancialFields()
+    {
+        $financialAttributes = $this->getFinancialConfiguration();
+        foreach ($financialAttributes as $attribute => $configuration) {
+            unset($this->attributes[$attribute]);
+        }
     }
 
 }
