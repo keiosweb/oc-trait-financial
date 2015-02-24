@@ -20,6 +20,8 @@ trait Financial
      */
     private $protectedFieldNames = [];
 
+    protected static $financialTraitAlreadyBooted = false;
+
     /**
      * Boot the financial trait for a model.
      *
@@ -28,6 +30,12 @@ trait Financial
      */
     public static function bootFinancial()
     {
+        if (static::$financialTraitAlreadyBooted) {
+            return;
+        }
+
+        static::$financialTraitAlreadyBooted = true;
+
         if (!property_exists(get_called_class(), 'financial')) {
             throw new \Exception(
                 sprintf('You must define a $financial property in %s to use the Financial trait.', get_called_class())
@@ -65,14 +73,9 @@ trait Financial
                 );
 
                 $model->bindEvent(
-                    'model.beforeGetAttribute',
-                    function ($key) use ($model, $financialAttributes) {
-                        if (in_array($key, array_keys($financialAttributes)) &&
-                            array_get($model->attributes, $financialAttributes[$key]['balance']) != null &&
-                            array_get($model->attributes, $financialAttributes[$key]['currency']) != null
-                        ) {
-                            return $model->getMoneyValueObject($key);
-                        }
+                    'model.afterFetch',
+                    function () use ($model) {
+                        $model->createFinancialAttributes();
                     }
                 );
 
@@ -108,6 +111,23 @@ trait Financial
             $this->protectedFieldNames[] = $configuration['currency'];
         }
     }
+
+    /**
+     * Build Money instances on configured fields and removes financial source fields from attributes
+     *
+     * @throws \Exception
+     */
+    public function createFinancialAttributes()
+    {
+        $financialAttributes = $this->getFinancialConfiguration();
+        foreach ($financialAttributes as $attribute => $configuration) {
+            $this->attributes[$attribute] = $this->getMoneyValueObject($attribute);
+            unset($this->attributes[$financialAttributes[$attribute]['balance']]);
+            unset($this->attributes[$financialAttributes[$attribute]['currency']]);
+        }
+
+    }
+
 
     /**
      * Checks that $financial field contains valid configuration
