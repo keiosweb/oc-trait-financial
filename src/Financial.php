@@ -20,6 +20,9 @@ trait Financial
      */
     private $protectedFieldNames = [];
 
+    /**
+     * @var bool
+     */
     protected static $financialTraitAlreadyBooted = false;
 
     /**
@@ -54,9 +57,11 @@ trait Financial
 
                 $model->guardProtectedFields($financialAttributes);
 
+                $financialObjectFields = array_keys($financialAttributes);
+
                 $model->bindEvent(
                     'model.beforeSetAttribute',
-                    function ($key, $value) use ($model, $financialAttributes) {
+                    function ($key, $value) use ($model, $financialAttributes, $financialObjectFields) {
                         /*
                          * if key is listed as protected field
                          * that constitute Financial data, quit
@@ -65,10 +70,13 @@ trait Financial
                             throw new ProtectedFieldException('Cannot save to protected field');
                         }
 
-                        if (in_array($key, array_keys($financialAttributes)) && ($value instanceof Money)) {
-                            return $model->setFinancialFieldsWithMoneyData($key, $value);
+                        if (in_array($key, $financialObjectFields)) {
+                            if (!$value instanceof Money) {
+                                throw new \InvalidArgumentException(
+                                    'Field '.$key.' can be only set with Keios\MoneyRight\Money object.'
+                                );
+                            }
                         }
-
                     }
                 );
 
@@ -81,7 +89,8 @@ trait Financial
 
                 $model->bindEvent(
                     'model.saveInternal',
-                    function () use ($model) {
+                    function () use ($model, $financialAttributes, $financialObjectFields) {
+                        $model->setFinancialFieldsWithMoneyData();
                         $model->purgeFinancialFields();
                     }
                 );
@@ -148,20 +157,15 @@ trait Financial
     }
 
     /**
-     * Extracts data from Money object and sets it directly in related attributes
-     *
-     * @param  string                  $key   Money Attribute
-     * @param  \Keios\MoneyRight\Money $value Money Value Object
-     *
-     * @return bool          true
+     * Extracts data from Money object and sets it directly in related source attributes
      */
-    public function setFinancialFieldsWithMoneyData($key, $value)
+    public function setFinancialFieldsWithMoneyData()
     {
         $financialAttributes = $this->getFinancialConfiguration();
-        $this->attributes[$financialAttributes[$key]['balance']] = $value->getAmountString();
-        $this->attributes[$financialAttributes[$key]['currency']] = $value->getCurrency()->getIsoCode();
-
-        return true;
+        foreach ($financialAttributes as $attribute => $configuration) {
+            $this->attributes[$configuration['balance']] = $this->attributes[$attribute]->getAmountString();
+            $this->attributes[$configuration['currency']] = $this->attributes[$attribute]->getCurrency()->getIsoCode();
+        }
     }
 
     /**
@@ -195,6 +199,11 @@ trait Financial
         return $this->financial;
     }
 
+    /**
+     * Removes financial model attribute
+     *
+     * @throws \Exception
+     */
     public function purgeFinancialFields()
     {
         $financialAttributes = $this->getFinancialConfiguration();
