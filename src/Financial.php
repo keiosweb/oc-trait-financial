@@ -94,6 +94,13 @@ trait Financial
                         $model->purgeFinancialFields();
                     }
                 );
+
+                $model->bindEvent(
+                    'model.afterSave',
+                    function () use ($model) {
+                        $model->createFinancialAttributes();
+                    }
+                );
             }
         );
     }
@@ -163,8 +170,13 @@ trait Financial
     {
         $financialAttributes = $this->getFinancialConfiguration();
         foreach ($financialAttributes as $attribute => $configuration) {
-            $this->attributes[$configuration['balance']] = $this->attributes[$attribute]->getAmountString();
-            $this->attributes[$configuration['currency']] = $this->attributes[$attribute]->getCurrency()->getIsoCode();
+            if (!isset($this->attributes[$configuration['balance']])) {
+                $this->attributes[$configuration['balance']] = $this->attributes[$attribute]->getAmountString();
+            }
+            if (!isset($this->attributes[$configuration['currency']])) {
+                $this->attributes[$configuration['currency']] = $this->attributes[$attribute]->getCurrency()
+                                                                                             ->getIsoCode();
+            }
         }
     }
 
