@@ -138,8 +138,6 @@ trait Financial
         $financialAttributes = $this->getFinancialConfiguration();
         foreach ($financialAttributes as $attribute => $configuration) {
             $this->attributes[$attribute] = $this->getMoneyValueObject($attribute);
-            unset($this->attributes[$financialAttributes[$attribute]['balance']]);
-            unset($this->attributes[$financialAttributes[$attribute]['currency']]);
         }
 
     }
