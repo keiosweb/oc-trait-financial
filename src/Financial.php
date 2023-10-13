@@ -190,7 +190,9 @@ trait Financial
         $financialAttributes = $this->getFinancialConfiguration();
         $balance = array_get($this->attributes, $financialAttributes[$key]['balance']);
         $currencyIso = array_get($this->attributes, $financialAttributes[$key]['currency']);
-
+        if (!$balance) {
+            $balance = 0; // support for nullable fields
+        }
         return Money::$currencyIso($balance);
     }
 
